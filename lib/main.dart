@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_email_sender/flutter_email_sender.dart';
 
 void main() {
   runApp(const MyApp());
@@ -7,119 +8,272 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'PT. Sarana Pactindo',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a blue toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color.fromARGB(255, 27, 167, 217)),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+  const MyHomePage({super.key});
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final TextEditingController _recipientController = TextEditingController();
+  final TextEditingController _subjectController = TextEditingController();
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _jobTitleController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
+
+  void _sendEmail() async {
+    final String recipient = _recipientController.text;
+    final String subject = _subjectController.text;
+    final String body = '''Nama: ${_nameController.text}
+Job Title: ${_jobTitleController.text}
+Alamat: ${_addressController.text}''';
+
+    final Email emailMessage = Email(
+      recipients: [recipient],
+      subject: subject,
+      body: body,
+    );
+
+    String platformResponse;
+
+    try {
+      await FlutterEmailSender.send(emailMessage);
+      platformResponse = 'Email terkirim';
+    } catch (error) {
+      platformResponse = error.toString();
+    }
+
+    Future.delayed(Duration.zero, () {
+      _showDialog(platformResponse);
     });
+  }
+
+  void _showDialog(String platformResponse) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Status Pengiriman Email'),
+          content: Text(platformResponse),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: const Text(
+          'Form Kirim Email',
+          style: TextStyle(
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: const Color(0xFF1BA7D9),
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+      body: SafeArea(
+        child: Container(
+          padding: const EdgeInsets.all(16.0),
+          child: ListView(
+            children: [
+              Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 5.0),
+                    TextFormField(
+                      controller: _recipientController,
+                      decoration: const InputDecoration(
+                        labelText: 'Penerima Email',
+                        labelStyle: TextStyle(
+                          color: Colors.black,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Color(0xFF1BA7D9)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Color(0xFF1BA7D9)),
+                        ),
+                        errorBorder: OutlineInputBorder(
+                          borderSide:
+                              BorderSide(color: Color.fromARGB(255, 255, 0, 0)),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value!.isEmpty) {
+                          return 'Harap masukkan alamat email penerima.';
+                        }
+                        if (!value.contains('@')) {
+                          return 'Alamat email tidak valid.';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16.0),
+                    TextFormField(
+                      controller: _subjectController,
+                      decoration: const InputDecoration(
+                        labelText: 'Subjek Email',
+                        labelStyle: TextStyle(
+                          color: Colors.black,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Color(0xFF1BA7D9)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Color(0xFF1BA7D9)),
+                        ),
+                        errorBorder: OutlineInputBorder(
+                          borderSide:
+                              BorderSide(color: Color.fromARGB(255, 255, 0, 0)),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value!.isEmpty) {
+                          return 'Harap masukkan subjek email.';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 30.0),
+                    const Text(
+                      'Body Email',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18.0,
+                      ),
+                    ),
+                    const SizedBox(height: 16.0),
+                    TextFormField(
+                      controller: _nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Nama',
+                        labelStyle: TextStyle(
+                          color: Colors.black,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Color(0xFF1BA7D9)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Color(0xFF1BA7D9)),
+                        ),
+                        errorBorder: OutlineInputBorder(
+                          borderSide:
+                              BorderSide(color: Color.fromARGB(255, 255, 0, 0)),
+                        ),
+                        hintText: 'Masukkan Nama',
+                      ),
+                      validator: (value) {
+                        if (value!.isEmpty) {
+                          return 'Harap masukkan nama.';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16.0),
+                    TextFormField(
+                      controller: _jobTitleController,
+                      decoration: const InputDecoration(
+                        labelText: 'Job Title',
+                        labelStyle: TextStyle(
+                          color: Colors.black,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Color(0xFF1BA7D9)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Color(0xFF1BA7D9)),
+                        ),
+                        errorBorder: OutlineInputBorder(
+                          borderSide:
+                              BorderSide(color: Color.fromARGB(255, 255, 0, 0)),
+                        ),
+                        hintText: 'Masukkan Job Title',
+                      ),
+                      validator: (value) {
+                        if (value!.isEmpty) {
+                          return 'Harap masukkan job title.';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16.0),
+                    TextFormField(
+                      controller: _addressController,
+                      decoration: const InputDecoration(
+                        labelText: 'Alamat',
+                        labelStyle: TextStyle(
+                          color: Colors.black,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Color(0xFF1BA7D9)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Color(0xFF1BA7D9)),
+                        ),
+                        errorBorder: OutlineInputBorder(
+                          borderSide:
+                              BorderSide(color: Color.fromARGB(255, 255, 0, 0)),
+                        ),
+                        hintText: 'Masukkan Alamat',
+                      ),
+                      validator: (value) {
+                        if (value!.isEmpty) {
+                          return 'Harap masukkan alamat.';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 20.0),
+                    ElevatedButton(
+                        onPressed: () {
+                          if (_formKey.currentState!.validate()) {
+                            _sendEmail();
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          backgroundColor: const Color(0xFF1BA7D9),
+                        ),
+                        child: const Text(
+                          'Kirim Email',
+                          style: TextStyle(
+                            color: Colors.white,
+                          ),
+                        )),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
